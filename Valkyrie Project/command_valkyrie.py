@@ -25,7 +25,7 @@ from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationExcept
 from netmiko import Netmiko, NetMikoTimeoutException, NetMikoAuthenticationException
 from netmiko import SSHDetect
 
-version = 0.49
+version = 0.50
 
 # These capture errors relating to hitting ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # KeyboardInterrupt: Ctrl-C
@@ -93,7 +93,6 @@ url = 'https://api.chucknorris.io/jokes/random'
 cn_resp = requests.get(url=url, headers={'Content-Type': 'application/json'})
 cn_joke = json.loads(cn_resp.text)
 
-
 # Function used in threads to connect to devices, passing in the thread # and queue
 def deviceconnector(i, q):
     # This while loop runs indefinitely and grabs IP addresses from the queue and processes them
@@ -144,16 +143,19 @@ def deviceconnector(i, q):
                 print('Th{}/{}: ERROR: Connection to {} timed-out. \n'.format(i+1, threads, ip))
                 errorfile.write('[{}] {} ERROR: Connection timed-out. \n'.format(datetime.now().strftime('%H:%M:%S'), ip))
             q.task_done()
+            break
         except (NetMikoAuthenticationException, AuthenticationException):
             with print_lock:
                 print('Th{}/{}: ERROR: Authentication failed for {}. Stopping thread. \n'.format(i+1, threads, ip))
                 errorfile.write('[{}] {} ERROR: Authentication failed. \n'.format(datetime.now().strftime('%H:%M:%S'), ip))
             q.task_done()
+            break
         except NoValidConnectionsError:
             with print_lock:
                 print('Th{}/{}: ERROR: No Connections available for device {}. \n'.format(i+1, threads, ip))
                 errorfile.write('[{}] {} ERROR: No Connections available. \n'.format(datetime.now().strftime('%H:%M:%S'), ip))
             q.task_done()
+            break
 
         # Capture the output
         # TODO TextFSM to parse data
@@ -244,7 +246,6 @@ def deviceconnector(i, q):
 
         # Close the file
         outputfile.close()
-        # errorfile.write('Closing file...')
         errorfile.close()
 
         # verify elapsed time per device

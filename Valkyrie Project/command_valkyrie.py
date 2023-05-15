@@ -80,7 +80,7 @@ commands_showtech = commands_showtech_file.read().splitlines()
 os.makedirs('valkyrie output', exist_ok=True)
 
 # Set up thread count for number of threads to spin up.
-threads = 5
+threads = 10
 # This sets up the queue
 enclosure_queue = Queue()
 # Set up thread lock so that only one thread prints at a time
@@ -278,7 +278,8 @@ def main():
         # the thread number and queue object as parameters
         thread = threading.Thread(target=deviceconnector, args=(i, enclosure_queue))
         # Set the thread as a background daemon/job
-        thread.setDaemon(True)
+        # thread.setDaemon(True)
+        thread.daemon = True
         # Start the thread
         thread.start()
 

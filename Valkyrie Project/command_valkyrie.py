@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # https://github.com/jonviveiros/Infrastructure-Code
-# https://github.com/CarouselIndustries/Infrastructure-Code
 
 # DESCRIPTION
 # The goal is to pull output from various SSH devices. Threading and device autodetection
@@ -25,7 +24,7 @@ from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationExcept
 from netmiko import Netmiko, NetMikoTimeoutException, NetMikoAuthenticationException
 from netmiko import SSHDetect
 
-version = 0.50
+version = 0.47
 
 # These capture errors relating to hitting ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # KeyboardInterrupt: Ctrl-C

@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-# https://github.com/jonviveiros/Infrastructure-Code
-
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 # https://github.com/jonviveiros/Infrastructure-Code
 
 # DESCRIPTION
@@ -13,8 +10,8 @@
 import re
 import os
 import csv
-import json
-import requests
+# import json
+# import requests
 import signal
 import sys
 import threading
@@ -36,14 +33,17 @@ password = getpass('Enter the password: ')
 secret = password
 ip_addrs = []
 
+# Create files
 ipfile = input('Enter the IP Addresses filename or press [Enter] to use the default of ips.txt: ')
-csvfilename = ("IPtoDNS output/parsed_data " + str(date.today()) + '.csv')
+csvfile = ("IPtoDNS output/parsed_data " + str(date.today()) + '.csv')
 
 
-if ipfile is '':
+if ipfile == '':
     with open('ips.txt', encoding='UTF-8') as ip_addrs_file:
         for line in ip_addrs_file:
             if re.match(r'\d', line[0]):
+                ip_addrs.append(line.strip())
+            if re.match(r'[a-zA-Z]', line[0]):
                 ip_addrs.append(line.strip())
             else:
                 continue
@@ -51,6 +51,8 @@ else:
     with open(ipfile, encoding='UTF-8') as ip_addrs_file:
         for line in ip_addrs_file:
             if re.match(r'\d', line[0]):
+                ip_addrs.append(line.strip())
+            if re.match(r'[a-zA-Z]', line[0]):
                 ip_addrs.append(line.strip())
             else:
                 continue
@@ -67,9 +69,11 @@ enclosure_queue = Queue()
 # Set up thread lock so that only one thread prints at a time
 print_lock = threading.Lock()
 
-print('*****\nInitiating IP to DNS process v{} ...\n*****')
+print('*****\nInitiating IP to DNS process ...\n*****')
 
 # Function used in threads to connect to devices, passing in the thread # and queue
+
+
 def deviceconnector(i, q):
     # This while loop runs indefinitely and grabs IP addresses from the queue and processes them
     # Loop will be blocked and wait if "ip = q.get()" is empty
@@ -79,9 +83,11 @@ def deviceconnector(i, q):
         with print_lock:
             print('Th{}/{}: Acquired IP:  {}'.format(i+1, threads, ip))
 
-        #Create an error log file
+        # Create files
         errorfile = open('IPtoDNS output/IPtoDNS errors ' + str(date.today()) + '.txt', 'a')
-
+        csvfile = open('IPtoDNS output/parsed_data ' + str(date.today()) + '.csv', 'a', newline='')
+        rawoutputfile = open('IPtoDNS output/IPtoDNS raw output ' + str(date.today()) + '.txt', 'a')
+        infoblox_csv = open('IPtoDNS output/infoblox_import ' + str(date.today()) + '.csv', 'a')
 
         # device_dict is copied over to net_connect
         device_dict = {
@@ -102,7 +108,7 @@ def deviceconnector(i, q):
             auto_device_dict = SSHDetect(**device_dict)
             device_os = auto_device_dict.autodetect()
             # Validate device type returned (Testing only)
-            # print('===== {} =====\n===== {} ====='.format(device_os, auto_device_dict.potential_matches))
+            # print(('===== {} =====\n===== {} ====='.format(device_os, auto_device_dict.potential_matches))
 
             # Update device_dict device_type from 'autodetect' to the detected OS
             if device_os is None:
@@ -139,27 +145,29 @@ def deviceconnector(i, q):
         hostname = prompt.rstrip('#>')
         print('Th{}/{}: Associated IP: {} with hostname: {}'.format(i+1, threads, ip, hostname))
 
-        timenow = '{:%Y-%m-%d %H_%M_%S}'.format(datetime.now())
+        # timenow = '{:%Y-%m-%d %H_%M_%S}'.format(datetime.now())
+        datenow = '{:%Y-%m-%d}'.format(datetime.now())
         start = datetime.now()
-        filename = ('IPtoDNS output.txt')
-        outputfile = open('IPtoDNS output/' + filename.format(timenow), 'w')
+        # filename = 'IPtoDNS output.txt'
+        # outputfile = open('IPtoDNS output/' + filename.format(timenow), 'w')
 
-        print('Th{}/{}: Writing file name "{} {} - IPtoDNS output {}.txt"'.format(i+1, threads, hostname, ip, format(timenow)))
+        print('Th{}/{}: Writing file name "{} {} - IPtoDNS raw output {}.txt"'.format(i+1, threads, hostname, ip, datenow))
 
         if device_os == 'cisco_ios':
             # for cmd in commands:
-                try:
-                    if re.match(r'\w', cmd):
-                        output = net_connect.send_command(cmd.strip(), delay_factor=1, max_loops=1000)
-                        parsed_data = parse_show_ip_int_brief(output, hostname)
-                        write_csv(parsed_data)
-                        # write_file(outputfile, prompt, cmd, output)
-                    else:
-                        outputfile.write(prompt + cmd + '\n')
-                except (NetMikoTimeoutException, EOFError, OSError) as e:
-                    exception_logging(e, i, threads, ip, hostname, cmd, prompt, outputfile, errorfile)
-                    net_connect = Netmiko(**device_dict)
-                    sleep(5)
+            try:
+                if re.match(r'\w', cmd):
+                    output = net_connect.send_command(cmd.strip(), delay_factor=1, max_loops=1000)
+                    parsed_data = parse_show_ip_int_brief(output, hostname)
+                    write_csv(csvfile, parsed_data)
+                    write_rawfile(rawoutputfile, prompt, cmd, output)
+                    # write_file(outputfile, prompt, cmd, output)
+                else:
+                    rawoutputfile.write(prompt + cmd + '\n')
+            except (NetMikoTimeoutException, EOFError, OSError) as e:
+                exception_logging(e, i, threads, ip, hostname, cmd, prompt, rawoutputfile, errorfile)
+                net_connect = Netmiko(**device_dict)
+                sleep(5)
         else:
             print("No match")
 
@@ -167,8 +175,10 @@ def deviceconnector(i, q):
         net_connect.disconnect()
 
         # Close the file
-        outputfile.close()
+        rawoutputfile.close()
         errorfile.close()
+        csvfile.close()
+        infoblox_csv.close()
 
         # verify elapsed time per device
         end = datetime.now()
@@ -178,10 +188,10 @@ def deviceconnector(i, q):
         q.task_done()
 
 
-def exception_logging(e, i, threads, ip, hostname, cmd, prompt, outputfile, errorfile):
+def exception_logging(e, i, threads, ip, hostname, cmd, prompt, rawoutputfile, errorfile):
     print('Th{}/{}: Exception occurred: {}'.format(i + 1, threads, repr(e)))
     print('Th{}/{}: ERROR: Connection lost. Reconnecting to: {} ({})\n'.format(i + 1, threads, ip, hostname))
-    outputfile.write('{} {} !!!!!Command failed - run manually!!!!!\n'.format(prompt, cmd))
+    rawoutputfile.write('{} {} !!!!!Command failed - run manually!!!!!\n'.format(prompt, cmd))
     errorfile.write('[{}] {} ({}) failed to run command: {}\n'.format(
         datetime.now().strftime('%H:%M:%S'), ip, hostname, cmd))
 
@@ -190,6 +200,9 @@ def parse_show_ip_int_brief(output, hostname):
     lines = output.strip().split('\n')
     headers = lines[0].split()
     data = []
+
+    # TODO Create an exclude interface filter
+    # exclude_int = ['Tu', 'Ucse']
 
     for line in lines[1:]:
         columns = re.split(r'\s+', line.strip())
@@ -205,18 +218,28 @@ def parse_show_ip_int_brief(output, hostname):
     return data
 
 
-def write_csv(parsed_data):
-    with open(csvfilename, 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=['interface', 'ip_address'])
-        writer.writeheader()
-        writer.writerows(parsed_data)
+def write_csv(csvfile, parsed_data):
+    # Writes to 'parsed_data + <date>.csv' file
+    writer = csv.DictWriter(csvfile, fieldnames=['interface', 'ip_address'])
+    # writer.writeheader()
+    writer.writerows(parsed_data)
+    #
+    # with open(csvfile, 'a', newline='') as csvfile:
+    #    writer = csv.DictWriter(csvfile, fieldnames=['interface', 'ip_address'])
+    #    writer.writeheader()
+    #    writer.writerows(parsed_data)
 
-def write_file():
-    # Takes in variables (outputfile, prompt, cmd, output) and writes output to file
-    outputfile.write((prompt + '\n') * 3)
-    outputfile.write(prompt + cmd + '\n')
-    outputfile.write(output + '\n')
 
+def write_rawfile(rawoutputfile, prompt, cmd, output):
+    # Writes to 'IPtoDNS raw output + <date>.txt' file
+    # Takes in variables (rawoutputfile, prompt, cmd, output) and writes output to file
+    rawoutputfile.write((prompt + '\n') * 3)
+    rawoutputfile.write(prompt + cmd + '\n')
+    rawoutputfile.write(output + '\n')
+
+
+# def write_infoblox_import(infoblox_csv, output):
+    # Writes to 'infoblox_import <date>.csv' file
 
 
 def main():

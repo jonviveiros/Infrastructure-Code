@@ -24,7 +24,7 @@ from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationExcept
 from netmiko import Netmiko, NetMikoTimeoutException, NetMikoAuthenticationException
 from netmiko import SSHDetect
 
-version = 0.47
+version = 0.48
 
 # These capture errors relating to hitting ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)  # KeyboardInterrupt: Ctrl-C
@@ -35,18 +35,16 @@ password = getpass('Enter the password: ')
 secret = None
 ip_addrs = []
 
-# Switch IP addresses from text file that has one IP per line
-# ip_addrs_file = open('ips.txt', encoding='UTF-8')
-# ip_addrs = ip_addrs_file.read().splitlines()
-
 ipfile = input('Enter the IP Addresses filename or press [Enter] to use the default of ips.txt: ')
 
 # TODO: Perform a check to ensure the file exists
 
-if ipfile is '':
+if ipfile == '':
     with open('ips.txt', encoding='UTF-8') as ip_addrs_file:
         for line in ip_addrs_file:
             if re.match(r'\d', line[0]):
+                ip_addrs.append(line.strip())
+            if re.match(r'[a-zA-Z]', line[0]):
                 ip_addrs.append(line.strip())
             else:
                 continue
@@ -54,6 +52,8 @@ else:
     with open(ipfile, encoding='UTF-8') as ip_addrs_file:
         for line in ip_addrs_file:
             if re.match(r'\d', line[0]):
+                ip_addrs.append(line.strip())
+            if re.match(r'[a-zA-Z]', line[0]):
                 ip_addrs.append(line.strip())
             else:
                 continue

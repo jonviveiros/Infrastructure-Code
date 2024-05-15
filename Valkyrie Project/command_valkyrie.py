@@ -87,11 +87,6 @@ print_lock = threading.Lock()
 
 print('*****\nInitiating Valkyrie process v{} ...\n*****'.format(version))
 
-# Fun Chuck Norris Joke at completion
-url = 'https://api.chucknorris.io/jokes/random'
-cn_resp = requests.get(url=url, headers={'Content-Type': 'application/json'})
-cn_joke = json.loads(cn_resp.text)
-
 # Function used in threads to connect to devices, passing in the thread # and queue
 def deviceconnector(i, q):
     # This while loop runs indefinitely and grabs IP addresses from the queue and processes them
@@ -103,7 +98,7 @@ def deviceconnector(i, q):
             print('Th{}/{}: Acquired IP:  {}'.format(i+1, threads, ip))
 
         #Create an error log file
-        errorfile = open('valkyrie output/valkyrie errors ' + str(date.today()) + '.txt', 'a')
+        errorfile = open("valkyrie output/valkyrie errors " + str(date.today()) + ".txt", 'a')
 
         # device_dict is copied over to net_connect
         device_dict = {
@@ -290,7 +285,6 @@ def main():
     enclosure_queue.join()
     # outputfile.close()
     print("*****\nCompleting Valkyrie process ...\n*****")
-    # print(cn_joke['value'])
 
 
 if __name__ == '__main__':

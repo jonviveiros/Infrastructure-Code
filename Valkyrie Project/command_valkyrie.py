@@ -10,8 +10,6 @@
 
 import re
 import os
-import json
-import requests
 import signal
 import sys
 import threading

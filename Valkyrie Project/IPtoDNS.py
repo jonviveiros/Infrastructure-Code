@@ -84,10 +84,10 @@ def deviceconnector(i, q):
             print('Th{}/{}: Acquired IP:  {}'.format(i+1, threads, ip))
 
         # Create files
-        errorfile = open('IPtoDNS output/IPtoDNS errors ' + str(date.today()) + '.txt', 'a')
-        csvfile = open('IPtoDNS output/parsed_data ' + str(date.today()) + '.csv', 'a', newline='')
-        rawoutputfile = open('IPtoDNS output/IPtoDNS raw output ' + str(date.today()) + '.txt', 'a')
-        infoblox_csv = open('IPtoDNS output/infoblox_import ' + str(date.today()) + '.csv', 'a')
+        errorfile = open("IPtoDNS output/IPtoDNS errors " + str(date.today()) + ".txt", 'a')
+        csvfile = open("IPtoDNS output/parsed_data " + str(date.today()) + '.csv', "a", newline='')
+        rawoutputfile = open("IPtoDNS output/IPtoDNS raw output " + str(date.today()) + ".txt", 'a')
+        infoblox_csv = open("IPtoDNS output/infoblox_import " + str(date.today()) + ".csv", 'a')
 
         # device_dict is copied over to net_connect
         device_dict = {

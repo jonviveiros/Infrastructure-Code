@@ -6,7 +6,6 @@
 # are leveraged to gather relevant information. Device_type is recognized for supported
 # devices to ensure only relevant commands are used.
 # Authentication via prompt
-# TODO Handle enable account for Cisco devices.
 
 import re
 import os
@@ -38,23 +37,18 @@ ipfile = input('Enter the IP Addresses filename or press [Enter] to use the defa
 # TODO: Perform a check to ensure the file exists
 
 if ipfile == '':
-    with open('ips.txt', encoding='UTF-8') as ip_addrs_file:
-        for line in ip_addrs_file:
-            if re.match(r'\d', line[0]):
-                ip_addrs.append(line.strip())
-            if re.match(r'[a-zA-Z]', line[0]):
-                ip_addrs.append(line.strip())
-            else:
-                continue
-else:
-    with open(ipfile, encoding='UTF-8') as ip_addrs_file:
-        for line in ip_addrs_file:
-            if re.match(r'\d', line[0]):
-                ip_addrs.append(line.strip())
-            if re.match(r'[a-zA-Z]', line[0]):
-                ip_addrs.append(line.strip())
-            else:
-                continue
+    ipfile = 'ips.txt'
+
+if not os.path.isfile(ipfile):
+    print(f"ERROR: IP file '{ipfile}' not found.")
+    sys.exit(1)
+
+with open(ipfile, encoding='UTF-8') as ip_addrs_file:
+    for line in ip_addrs_file:
+        if re.match(r'[\da-zA-Z]', line[0]):
+            ip_addrs.append(line.strip())
+        else:
+            continue
 
 
 # List of commands to run split by line
